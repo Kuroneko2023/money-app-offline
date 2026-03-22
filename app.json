@@ -2,12 +2,13 @@
   "expo": {
     "name": "แอปการเงิน MAGI",
     "slug": "money-app-off",
-    "icon": "./assets/images/icon.png", 
+    "icon": "./assets/images/icon.png",
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/icon.png", 
+        "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#1A0E35"
-      }
+      },
+      "package": "com.yamineko.moneyappoff"
     },
     "extra": {
       "eas": {
