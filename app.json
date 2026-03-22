@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "money-app-off",
-    "slug": "money-app-off",
-    "version": "1.0.0",
+    "name": "แอปการเงิน",
+    "slug": "แอปการเงิน",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "moneyappoff",
@@ -52,6 +52,12 @@
       "eas": {
         "projectId": "60948cc6-482c-4ee3-9a73-44829ab37025"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/60948cc6-482c-4ee3-9a73-44829ab37025"
     }
   }
 }

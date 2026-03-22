@@ -5,16 +5,18 @@ import { PieChart } from "react-native-chart-kit";
 
 // สีประจำหมวดหมู่ (EVA-01 COLOR PALETTE)
 const categoryColors: any = {
-  '🍽️ อาหาร (RATION)': '#FF4A3D',
-  '🚗 เดินทาง (UNIT-MOVE)': '#00D0FF',
-  'ช้อปปิ้ง (ARMOR)': '#E040FB',
-  'บิล/ค่าเช่า (MAINTENANCE)': '#FFEA00',
-  'บันเทิง (ENTERTAIN)': '#FF4081',
-  'สุขภาพ (REPAIR)': '#00E676',
-  'อื่นๆ (OTHER)': '#6A4C9C',
-  '💰 เงินเดือน (SALARY)': '#75F94C',
-  'โบนัส (BONUS)': '#1DE9B6',
-  'รายได้เสริม (SUPPORT)': '#B2FF59',
+  // รายจ่าย
+  '🍽️ อาหาร': '#FF4A3D',       // แดงส้ม Core
+  '🚗 เดินทาง': '#00D0FF',      // ฟ้าพลังงาน
+  '🛍️ ช้อปปิ้ง': '#E040FB',     // ม่วงนีออน
+  '📄 บิล/ค่าเช่า': '#FFEA00',   // เหลืองเตือนภัย
+  '🍿 บันเทิง': '#FF4081',      // ชมพูสะท้อนแสง
+  '🏥 สุขภาพ': '#00E676',      // เขียวฟื้นฟู
+  '📦 อื่นๆ': '#6A4C9C',        // ม่วงหม่น
+  // รายรับ
+  '💰 เงินเดือน': '#75F94C',     // เขียว EVA หลัก
+  '🎁 โบนัส': '#1DE9B6',       // เขียวมินต์
+  '📈 รายได้เสริม': '#B2FF59',   // เขียวตองอ่อน
 };
 
 const screenWidth = Dimensions.get("window").width;
@@ -34,102 +36,66 @@ export default function DashboardScreen() {
   const [loading, setLoading] = useState(true);
   const [timeFilter, setTimeFilter] = useState<'daily' | 'weekly' | 'monthly' | 'all'>('monthly');
   const [monthOffset, setMonthOffset] = useState(0);
-  
   const [data, setData] = useState<any[]>([]);
   const [totalIncome, setTotalIncome] = useState(0);
   const [totalExpense, setTotalExpense] = useState(0);
   const [currentDisplayDate, setCurrentDisplayDate] = useState('');
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, [timeFilter, monthOffset]);
+  useEffect(() => { fetchDashboardData(); }, [timeFilter, monthOffset]);
 
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
       const now = new Date();
-      let startDateStr = '';
-      let endDateStr = '';
-      let displayDateText = '';
+      let start = '', end = '', label = '';
 
       if (timeFilter === 'daily') {
-        const start = new Date(now.setHours(0, 0, 0, 0));
-        const end = new Date(now.setHours(23, 59, 59, 999));
-        startDateStr = start.toISOString();
-        endDateStr = end.toISOString();
-        displayDateText = 'TODAY';
-      } 
-      else if (timeFilter === 'weekly') {
-        const day = now.getDay();
-        const diff = now.getDate() - day;
-        const start = new Date(now.setDate(diff));
-        start.setHours(0, 0, 0, 0);
-        const end = new Date(start);
-        end.setDate(end.getDate() + 6);
-        end.setHours(23, 59, 59, 999);
-        startDateStr = start.toISOString();
-        endDateStr = end.toISOString();
-        displayDateText = 'THIS WEEK';
-      } 
-      else if (timeFilter === 'monthly') {
-        const targetDate = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
-        const start = new Date(targetDate.getFullYear(), targetDate.getMonth(), 1, 0, 0, 0, 0);
-        const end = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 0, 23, 59, 59, 999);
-        startDateStr = start.toISOString();
-        endDateStr = end.toISOString();
-        const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-        displayDateText = `${monthNames[targetDate.getMonth()]} ${targetDate.getFullYear()}`;
-      }
-      else if (timeFilter === 'all') {
-        startDateStr = new Date('2000-01-01').toISOString();
-        endDateStr = new Date('2100-01-01').toISOString();
-        displayDateText = 'ALL TIME RECORD';
+        const d = new Date(now.setHours(0,0,0,0));
+        start = d.toISOString();
+        end = new Date(now.setHours(23,59,59,999)).toISOString();
+        label = 'วันนี้';
+      } else if (timeFilter === 'monthly') {
+        const target = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
+        start = new Date(target.getFullYear(), target.getMonth(), 1).toISOString();
+        end = new Date(target.getFullYear(), target.getMonth() + 1, 0, 23, 59, 59).toISOString();
+        const months = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+        label = `${months[target.getMonth()]} ${target.getFullYear() + 543}`;
+      } else if (timeFilter === 'all') {
+        start = '2000-01-01'; end = '2100-01-01'; label = 'ทั้งหมด';
+      } else { // weekly
+        const d = now.getDay();
+        const s = new Date(now.setDate(now.getDate() - d));
+        start = s.toISOString();
+        const e = new Date(s); e.setDate(e.getDate() + 6);
+        end = e.toISOString();
+        label = 'สัปดาห์นี้';
       }
 
-      setCurrentDisplayDate(displayDateText);
-
-      const database = await SQLite.openDatabaseAsync('my_wallet_eva.db');
-      // ดึงข้อมูลทั้งหมดในช่วงเวลาที่เลือก โดยไม่สนใจว่าเป็นรายรับหรือรายจ่าย
-      const query = `SELECT * FROM transactions WHERE transaction_date >= ? AND transaction_date <= ?`;
-      const rows: any = await database.getAllAsync(query, [startDateStr, endDateStr]);
+      setCurrentDisplayDate(label);
+      const db = await SQLite.openDatabaseAsync('my_wallet_eva.db');
+      const rows: any = await db.getAllAsync(`SELECT * FROM transactions WHERE transaction_date >= ? AND transaction_date <= ?`, [start, end]);
       
-      let sumInc = 0;
-      let sumExp = 0;
-      let totalVolume = 0; // ยอดการเคลื่อนไหวทั้งหมดเพื่อนำไปคิด %
-      const groupedData: any = {};
+      let inc = 0, exp = 0, volume = 0;
+      const grouped: any = {};
       
       rows.forEach((item: any) => {
-        if (item.type === 'income') {
-            sumInc += item.amount;
-        } else {
-            sumExp += item.amount;
-        }
-        
-        totalVolume += item.amount;
-
-        if (groupedData[item.category]) {
-          groupedData[item.category] += item.amount;
-        } else {
-          groupedData[item.category] = item.amount;
-        }
+        if (item.type === 'income') inc += item.amount; else exp += item.amount;
+        volume += item.amount;
+        grouped[item.category] = (grouped[item.category] || 0) + item.amount;
       });
 
-      const chartData = Object.keys(groupedData).map((key) => ({
+      const chartData = Object.keys(grouped).map(key => ({
         name: key,
-        amount: groupedData[key],
-        color: categoryColors[key] || '#9CA3AF',
-        percentage: totalVolume > 0 ? (groupedData[key] / totalVolume) * 100 : 0
-      }));
-
-      chartData.sort((a, b) => b.amount - a.amount);
+        amount: grouped[key],
+        color: categoryColors[key] || '#9CA3AF', // คราวนี้สีจะมาแล้วครับ!
+        legendFontColor: "#B49CE5",
+        legendFontSize: 12
+      })).sort((a, b) => b.amount - a.amount);
 
       setData(chartData);
-      setTotalIncome(sumInc);
-      setTotalExpense(sumExp);
-
-    } catch (error) {
-      console.error("MAGI ANALYSIS ERROR:", error);
-    }
+      setTotalIncome(inc);
+      setTotalExpense(exp);
+    } catch (e) { console.error(e); }
     setLoading(false);
   };
 
@@ -138,96 +104,59 @@ export default function DashboardScreen() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
-      
-      {/* ส่วนหัว */}
-      <View style={styles.header}>
-        <Text style={styles.title}>MAGI SYSTEM : สรุป</Text>
-      </View>
+      <View style={styles.header}><Text style={styles.title}>MAGI SYSTEM : สรุป</Text></View>
 
-      {/* แถบตัวกรองเวลา */}
       <View style={styles.timeFilterContainer}>
-        <TouchableOpacity style={[styles.timeBtn, timeFilter === 'daily' && styles.timeBtnActive]} onPress={() => { setTimeFilter('daily'); setMonthOffset(0); }}>
-          <Text style={[styles.timeBtnText, timeFilter === 'daily' && styles.timeBtnTextActive]}>DAY</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.timeBtn, timeFilter === 'weekly' && styles.timeBtnActive]} onPress={() => { setTimeFilter('weekly'); setMonthOffset(0); }}>
-          <Text style={[styles.timeBtnText, timeFilter === 'weekly' && styles.timeBtnTextActive]}>WEEK</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.timeBtn, timeFilter === 'monthly' && styles.timeBtnActive]} onPress={() => { setTimeFilter('monthly'); setMonthOffset(0); }}>
-          <Text style={[styles.timeBtnText, timeFilter === 'monthly' && styles.timeBtnTextActive]}>MONTH</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.timeBtn, timeFilter === 'all' && styles.timeBtnActive]} onPress={() => { setTimeFilter('all'); setMonthOffset(0); }}>
-          <Text style={[styles.timeBtnText, timeFilter === 'all' && styles.timeBtnTextActive]}>ALL</Text>
-        </TouchableOpacity>
+        {['daily', 'weekly', 'monthly', 'all'].map((f: any) => (
+          <TouchableOpacity key={f} style={[styles.timeBtn, timeFilter === f && styles.timeBtnActive]} onPress={() => {setTimeFilter(f); setMonthOffset(0);}}>
+            <Text style={[styles.timeBtnText, timeFilter === f && styles.timeBtnTextActive]}>{f.toUpperCase()}</Text>
+          </TouchableOpacity>
+        ))}
       </View>
 
-      {/* ระบบเลื่อนเดือน */}
       {timeFilter === 'monthly' && (
-        <View style={styles.monthNavContainer}>
-          <TouchableOpacity onPress={() => setMonthOffset(prev => prev - 1)} style={styles.monthNavBtn}>
-            <Text style={styles.monthNavText}>◀ PREV</Text>
-          </TouchableOpacity>
-          <Text style={styles.monthCurrentText}>{currentDisplayDate}</Text>
-          <TouchableOpacity onPress={() => setMonthOffset(prev => prev + 1)} style={styles.monthNavBtn}>
-            <Text style={styles.monthNavText}>NEXT ▶</Text>
-          </TouchableOpacity>
+        <View style={styles.monthNav}>
+          <TouchableOpacity onPress={() => setMonthOffset(o => o - 1)}><Text style={styles.navText}>◀ ก่อนหน้า</Text></TouchableOpacity>
+          <Text style={styles.monthLabel}>{currentDisplayDate}</Text>
+          <TouchableOpacity onPress={() => setMonthOffset(o => o + 1)}><Text style={styles.navText}>ถัดไป ▶</Text></TouchableOpacity>
         </View>
       )}
 
-      {/* กล่องสรุปยอดรวม (รับ-จ่าย ในกล่องเดียว) */}
       <View style={styles.summaryCard}>
-        <Text style={styles.summaryTitle}>NET BALANCE ({timeFilter !== 'monthly' ? currentDisplayDate : 'MONTHLY'})</Text>
-        {/* สีตัวเลขเปลี่ยนตามยอดคงเหลือ บวกรวย=เขียว ลบจน=แดง */}
-        <Text style={[styles.balanceValue, { color: netBalance >= 0 ? '#75F94C' : '#FF4A3D' }]}>
-          {netBalance >= 0 ? '+' : ''} ฿ {netBalance.toLocaleString()}
-        </Text>
-        
+        <Text style={styles.summaryTitle}>ยอดเงินสุทธิ ({currentDisplayDate})</Text>
+        <Text style={[styles.balanceValue, { color: netBalance >= 0 ? '#75F94C' : '#FF4A3D' }]}>฿ {netBalance.toLocaleString()}</Text>
         <View style={styles.flowRow}>
-          <View style={styles.flowBox}>
-            <Text style={styles.flowLabel}>INCOME</Text>
-            <Text style={styles.flowIncome}>+ ฿{totalIncome.toLocaleString()}</Text>
-          </View>
-          <View style={styles.flowBox}>
-            <Text style={styles.flowLabel}>EXPENSE</Text>
-            <Text style={styles.flowExpense}>- ฿{totalExpense.toLocaleString()}</Text>
-          </View>
+          <View style={styles.flowBox}><Text style={styles.flowLabel}>รายรับ</Text><Text style={styles.flowInc}>+฿{totalIncome.toLocaleString()}</Text></View>
+          <View style={styles.flowBox}><Text style={styles.flowLabel}>รายจ่าย</Text><Text style={styles.flowExp}>-฿{totalExpense.toLocaleString()}</Text></View>
         </View>
       </View>
 
-      {/* เนื้อหาหลัก (กราฟวงกลมรวม + รายการ) */}
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {loading ? (
-          <ActivityIndicator size="large" color="#75F94C" style={{ marginTop: 50 }} />
-        ) : data.length === 0 ? (
-          <Text style={styles.emptyText}>NO DATA IN MAGI ARCHIVE</Text>
-        ) : (
-          <>
-            <View style={styles.chartContainer}>
+      <ScrollView style={styles.content}>
+        {loading ? <ActivityIndicator color="#75F94C" style={{marginTop: 50}} /> : (
+          data.length === 0 ? <Text style={styles.empty}>ไม่มีข้อมูลในช่วงเวลานี้</Text> : (
+            <>
               <PieChart
-                data={data.map(item => ({...item, legendFontColor: "#FFFFFF", legendFontSize: 10}))}
-                width={screenWidth}
-                height={220}
-                chartConfig={chartConfig}
+                data={data}
+                width={screenWidth - 40}
+                height={200}
+                chartConfig={{ color: (o) => `rgba(255, 255, 255, ${o})` }}
                 accessor={"amount"}
                 backgroundColor={"transparent"}
                 paddingLeft={"15"}
                 absolute
               />
-            </View>
-
-            <Text style={styles.sectionTitle}>ALL TRANSACTIONS BREAKDOWN</Text>
-            {data.map((item, index) => (
-              <View key={index} style={styles.itemRow}>
-                <View style={[styles.colorDot, { backgroundColor: item.color }]} />
-                <View style={styles.itemInfo}>
-                  <Text style={styles.categoryName}>{item.name}</Text>
-                  <Text style={styles.categoryPercentage}>{item.percentage.toFixed(1)}%</Text>
+              <Text style={styles.sectionTitle}>สัดส่วนหมวดหมู่</Text>
+              {data.map((item, i) => (
+                <View key={i} style={styles.itemRow}>
+                  <View style={[styles.dot, {backgroundColor: item.color}]} />
+                  <Text style={styles.itemName}>{item.name}</Text>
+                  <Text style={styles.itemAmt}>฿{item.amount.toLocaleString()}</Text>
                 </View>
-                <Text style={styles.categoryAmount}>฿{item.amount.toLocaleString()}</Text>
-              </View>
-            ))}
-          </>
+              ))}
+            </>
+          )
         )}
-        <View style={{ height: 50 }} />
+        <View style={{height: 40}} />
       </ScrollView>
     </View>
   );
@@ -235,40 +164,29 @@ export default function DashboardScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0B0616' },
-  header: { paddingTop: 60, paddingBottom: 20, paddingHorizontal: 20, backgroundColor: '#241244', borderBottomWidth: 2, borderColor: '#75F94C', alignItems: 'center' },
-  title: { color: '#B49CE5', fontSize: 16, fontWeight: '900', letterSpacing: 2 },
-  
-  timeFilterContainer: { flexDirection: 'row', marginHorizontal: 20, marginTop: 20, marginBottom: 15, justifyContent: 'space-between' },
-  timeBtn: { flex: 1, paddingVertical: 8, alignItems: 'center', backgroundColor: '#180C2E', borderWidth: 1, borderColor: '#4A2A85', marginHorizontal: 2, borderRadius: 6 },
-  timeBtnActive: { backgroundColor: '#4A2A85', borderColor: '#B49CE5' },
-  timeBtnText: { color: '#6A4C9C', fontSize: 10, fontWeight: 'bold', letterSpacing: 1 },
-  timeBtnTextActive: { color: '#E0D4F5', fontWeight: '900' },
-
-  monthNavContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginHorizontal: 20, marginBottom: 15, backgroundColor: '#180C2E', padding: 10, borderRadius: 8, borderWidth: 1, borderColor: '#4A2A85' },
-  monthNavBtn: { paddingHorizontal: 10, paddingVertical: 5 },
-  monthNavText: { color: '#75F94C', fontWeight: 'bold', fontSize: 12 },
-  monthCurrentText: { color: '#FFFFFF', fontWeight: '900', fontSize: 14, letterSpacing: 1 },
-
-  // สไตล์กล่องสรุปยอดแบบใหม่ (รวมมิตร)
-  summaryCard: { backgroundColor: '#180C2E', marginHorizontal: 20, marginBottom: 20, padding: 20, borderRadius: 16, borderWidth: 1, borderColor: '#6A4C9C', alignItems: 'center', elevation: 5, shadowColor: '#75F94C' },
-  summaryTitle: { color: '#B49CE5', fontSize: 12, fontWeight: 'bold', letterSpacing: 1.5, marginBottom: 10 },
-  balanceValue: { fontSize: 36, fontWeight: '900', marginBottom: 20, textShadowOffset: {width: 0, height: 0}, textShadowRadius: 10 },
-  flowRow: { flexDirection: 'row', width: '100%', borderTopWidth: 1, borderTopColor: '#331D60', paddingTop: 15 },
+  header: { paddingTop: 60, paddingBottom: 20, backgroundColor: '#1A0E35', alignItems: 'center', borderBottomWidth: 2, borderColor: '#75F94C' },
+  title: { color: '#B49CE5', fontSize: 18, fontWeight: 'bold', letterSpacing: 2 },
+  timeFilterContainer: { flexDirection: 'row', padding: 15, justifyContent: 'space-between' },
+  timeBtn: { flex: 1, padding: 8, alignItems: 'center', backgroundColor: '#180C2E', marginHorizontal: 2, borderRadius: 8, borderWidth: 1, borderColor: '#331D60' },
+  timeBtnActive: { borderColor: '#75F94C', backgroundColor: '#241447' },
+  timeBtnText: { color: '#6A4C9C', fontSize: 10, fontWeight: 'bold' },
+  timeBtnTextActive: { color: '#75F94C' },
+  monthNav: { flexDirection: 'row', justifyContent: 'space-between', marginHorizontal: 20, marginBottom: 15, backgroundColor: '#180C2E', padding: 10, borderRadius: 10 },
+  navText: { color: '#75F94C', fontSize: 12 },
+  monthLabel: { color: '#FFF', fontWeight: 'bold' },
+  summaryCard: { backgroundColor: '#180C2E', marginHorizontal: 20, padding: 20, borderRadius: 20, borderWidth: 1, borderColor: '#331D60', alignItems: 'center' },
+  summaryTitle: { color: '#B49CE5', fontSize: 12, marginBottom: 10 },
+  balanceValue: { fontSize: 32, fontWeight: 'bold', marginBottom: 15 },
+  flowRow: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: '#331D60', paddingTop: 15, width: '100%' },
   flowBox: { flex: 1, alignItems: 'center' },
-  flowLabel: { color: '#6A4C9C', fontSize: 11, fontWeight: 'bold', letterSpacing: 1, marginBottom: 5 },
-  flowIncome: { color: '#75F94C', fontSize: 16, fontWeight: 'bold' },
-  flowExpense: { color: '#FF4A3D', fontSize: 16, fontWeight: 'bold' },
-  
-  content: { paddingHorizontal: 20 },
-  chartContainer: { alignItems: 'center', marginBottom: 15, overflow: 'hidden' },
-  
-  sectionTitle: { fontSize: 14, fontWeight: '900', color: '#75F94C', marginTop: 10, marginBottom: 15, letterSpacing: 1, textAlign: 'center' },
-  itemRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#180C2E', padding: 12, borderRadius: 8, marginBottom: 8, borderWidth: 1, borderColor: '#331D60', borderLeftWidth: 4, borderLeftColor: '#6A4C9C' },
-  colorDot: { width: 12, height: 12, borderRadius: 6, marginRight: 15 },
-  itemInfo: { flex: 1 },
-  categoryName: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 14 },
-  categoryPercentage: { color: '#B49CE5', fontSize: 10, marginTop: 2 },
-  categoryAmount: { color: '#FFFFFF', fontWeight: '900', fontSize: 15 },
-  
-  emptyText: { textAlign: 'center', color: '#6A4C9C', marginTop: 40, fontWeight: 'bold', letterSpacing: 1.5 }
+  flowLabel: { color: '#6A4C9C', fontSize: 10 },
+  flowInc: { color: '#75F94C', fontWeight: 'bold' },
+  flowExp: { color: '#FF4A3D', fontWeight: 'bold' },
+  content: { padding: 20 },
+  sectionTitle: { color: '#75F94C', fontWeight: 'bold', textAlign: 'center', marginVertical: 15 },
+  itemRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#180C2E', padding: 15, borderRadius: 12, marginBottom: 8 },
+  dot: { width: 12, height: 12, borderRadius: 6, marginRight: 15 },
+  itemName: { flex: 1, color: '#FFF' },
+  itemAmt: { color: '#FFF', fontWeight: 'bold' },
+  empty: { color: '#6A4C9C', textAlign: 'center', marginTop: 50 }
 });
